@@ -91,7 +91,6 @@ class Ntt {
                 possibleZetas.add(root);
             }
         }
-        System.out.println(possibleZetas);  // REMOVE
         return possibleZetas.getFirst();
     }
     /**
