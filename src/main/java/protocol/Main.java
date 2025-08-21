@@ -10,11 +10,11 @@ import java.nio.file.Path;
 import java.util.Arrays;
 
 // SOURCE for Server logic: https://www.baeldung.com/java-unix-domain-socket
-// SOURCE for simple message exchange: CHAT GPT
+// SOURCE for simple message exchange: CHATGPT
 public class Main {
 
-    private static final BigInteger N = BigInteger.valueOf(1024);
-    private static final BigInteger Q = BigInteger.valueOf(1073479681);
+    private static final BigInteger N = BigInteger.valueOf(8);
+    private static final BigInteger Q = BigInteger.valueOf(17);
 
     private static String readMessage(SocketChannel channel) throws IOException {
         ByteBuffer buffer = ByteBuffer.allocate(1024);

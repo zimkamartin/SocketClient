@@ -24,6 +24,11 @@ class Polynomial {
         this.coefficients[i] = val;
     }
 
+    BigInteger getCoeffIndex(int i)
+    {
+        return this.coefficients[i];
+    }
+
     BigInteger[] getCoeffs()
     {
         return this.coefficients;
