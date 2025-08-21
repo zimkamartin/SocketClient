@@ -9,7 +9,7 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
  * </p>
  */
 class ShakeSymmetric {
-    private final int xofBlockBytes;
+    final int xofBlockBytes;
     private final SHAKEDigest xof;
 
     ShakeSymmetric() {
