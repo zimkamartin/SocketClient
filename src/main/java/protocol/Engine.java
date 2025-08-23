@@ -36,9 +36,9 @@ class Engine {
         xof.doOutput(out, outOffset, outLen);
     }
 
-    void hash(byte[] out, byte[] in, int outOffset) {
+    void hash(byte[] out, byte[] in) {
         sha3Digest256.update(in, 0, in.length);
-        sha3Digest256.doFinal(out, outOffset);
+        sha3Digest256.doFinal(out, 0);
     }
 
     public void getRandomBytes(byte[] buf) {
