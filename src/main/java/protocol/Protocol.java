@@ -71,7 +71,7 @@ class Protocol {
         Polynomial sv = new Polynomial(new BigInteger[n.intValue()]);  // !!! conversion to int !!!
         Polynomial ev = new Polynomial(new BigInteger[n.intValue()]);  // !!! conversion to int !!!
         getEtaNoise(sv, seeds.getSeed1());
-        getEtaNoise(ev, seeds.getSeed1());
+        getEtaNoise(ev, seeds.getSeed2());
         Polynomial svNtt = ntt.convertToNtt(sv);
         Polynomial evNtt = ntt.convertFromNtt(ev);
         // Do all the math.
