@@ -15,6 +15,9 @@ public class Main {
 
     private static final BigInteger N = BigInteger.valueOf(8);
     private static final BigInteger Q = BigInteger.valueOf(17);
+    private static final int ETA = 3;
+
+    static byte[] publicSeed;
 
     private static String readMessage(SocketChannel channel) throws IOException {
         ByteBuffer buffer = ByteBuffer.allocate(1024);
@@ -35,7 +38,11 @@ public class Main {
     }
 
     public static void main(String[] args) throws IOException {
-        Ntt ntt = new Ntt(N, Q);
+
+        Protocol protocol = new Protocol(N, Q, ETA);
+        publicSeed = protocol.generatePublicSeed();
+
+
 
 //        Path socketPath = Path.of(System.getProperty("user.home")).resolve("socket");
 //        UnixDomainSocketAddress socketAddress = UnixDomainSocketAddress.of(socketPath);

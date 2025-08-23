@@ -16,11 +16,19 @@ class Protocol {
     // THIS IS NOT HOW TO DO IT !!! THIS IS JUST FOR PROOF-OF-CONCEPT !!! THIS IS NOT HOW TO DO IT !!!
     private final BigInteger n;
     private final BigInteger q;
+    private final int eta;
     private final Engine engine;
-    public byte[] publicSeed;
-    private final Polynomial aNtt;
     private final Ntt ntt;
     private final Mlkem mlkem;
+
+    Protocol(BigInteger n, BigInteger q, int eta) {
+        this.n = n;
+        this.q = q;
+        this.eta = eta;
+        this.engine = new Engine();
+        this.ntt = new Ntt(this.n, this.q);
+        this.mlkem = new Mlkem(this.n, this.q);
+    }
 
     private Seeds createSeeds() {
         // seed1 = SHA3-256(salt||SHA3-256(I||pwd))
@@ -39,19 +47,37 @@ class Protocol {
         return new Seeds(seed1, seed2);
     }
 
-    Protocol(BigInteger n, BigInteger q) {
-        this.n = n;
-        this.q = q;
-        this.engine = new Engine();
-        this.publicSeed = new byte[34];
-        this.ntt = new Ntt(n, q);
-        this.mlkem = new Mlkem(n, q);
-        this.aNtt = new Polynomial(new BigInteger[n.intValue()]);
-        mlkem.generateUniformPolynomialNtt(engine, aNtt, publicSeed);
+    public byte[] generatePublicSeed() {
+        byte[] publicSeed = new byte[34];
+        engine.getRandomBytes(publicSeed);
+        return publicSeed;
     }
 
-    // TODO
-    void phase0() {
+    private void getEtaNoise(Polynomial r, byte[] seed) {
+        byte[] buf = new byte[n.intValue() * eta / 4];
+        engine.prf(buf, seed);
+        mlkem.generateCbdPolynomial(r, buf, eta);
+    }
+
+    // TODO send I, salt, v to server
+    void phase0(byte[] publicSeed) {
+        // v = asv + 2ev  //
+        // seed1 = SHA3-256(salt||SHA3-256(I||pwd)); seed2 = SHA3-256(seed1)  //
+        // Create polynomial a from public seed.
+        Polynomial aNtt = new Polynomial(new BigInteger[n.intValue()]);  // !!! conversion to int !!!
+        mlkem.generateUniformPolynomialNtt(engine, aNtt, publicSeed);
+        // Based on seeds (computed from private values) generate sv, ev.
+        Seeds seeds = createSeeds();
+        Polynomial sv = new Polynomial(new BigInteger[n.intValue()]);  // !!! conversion to int !!!
+        Polynomial ev = new Polynomial(new BigInteger[n.intValue()]);  // !!! conversion to int !!!
+        getEtaNoise(sv, seeds.getSeed1());
+        getEtaNoise(ev, seeds.getSeed1());
+        Polynomial svNtt = ntt.convertToNtt(sv);
+        Polynomial evNtt = ntt.convertFromNtt(ev);
+        // Do all the math.
+        Polynomial aSvNtt = ntt.multiplyNttPolys(aNtt, svNtt);
+        Polynomial twoEvNtt = ntt.multiplyNttPolys(ntt.generateConstantPolynomialNtt(BigInteger.TWO), evNtt);
+        Polynomial vNtt = ntt.add(aSvNtt, twoEvNtt);
     }
 
     // TODO
