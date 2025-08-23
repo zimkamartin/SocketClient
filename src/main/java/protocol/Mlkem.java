@@ -5,7 +5,10 @@ import java.math.BigInteger;
 /**
  * Extracted (and modified) all needed functions from MLKEM.
  * <p>
- * Functions are modified, however heavily inspired by: https://github.com/bcgit/bc-java/blob/main/core/src/main/java/org/bouncycastle/pqc/crypto/mlkem/MLKEMIndCpa.java
+ * Functions are modified, however heavily inspired by
+ * https://github.com/bcgit/bc-java/blob/main/core/src/main/java/org/bouncycastle/pqc/crypto/mlkem/MLKEMIndCpa.java
+ * and
+ * https://github.com/bcgit/bc-java/blob/main/core/src/main/java/org/bouncycastle/pqc/crypto/mlkem/CBD.java
  * </p>
  */
 class Mlkem {
@@ -101,5 +104,32 @@ class Mlkem {
         }
     }
 
-    // TODO: Add CBD
+    private static long convertByteTo24BitUnsignedInt(byte[] x, int offset) {
+        long r = (long)(x[offset] & 0xFF);
+        r = r | (long)((long)(x[offset + 1] & 0xFF) << 8);
+        r = r | (long)((long)(x[offset + 2] & 0xFF) << 16);
+        return r;
+    }
+
+    // TODO: Change it for dynamic eta.
+    // TODO: Figure out suitable eta value for given n and q.
+    void generateCbdPolynomial(Polynomial r, byte[] bytes, int eta) {
+        long t, d;
+        int a, b;
+
+        for (int i = 0; i < n.intValue() / 4; i++) {  // When eta is equal to 3.  // !!! Conversion to int !!!
+            t = convertByteTo24BitUnsignedInt(bytes, 3 * i);
+            d = t & 0x00249249;
+            d = d + ((t >> 1) & 0x00249249);
+            d = d + ((t >> 2) & 0x00249249);
+            for (int j = 0; j < 4; j++)
+            {
+                a = (short)((d >> (6 * j + 0)) & 0x7);
+                b = (short)((d >> (6 * j + 3)) & 0x7);
+                short diffShort = (short)(a - b);
+                BigInteger diffBI = BigInteger.valueOf(diffShort);
+                r.setCoeffIndex(4 * i + j, diffBI.mod(q));
+            }
+        }
+    }
 }
