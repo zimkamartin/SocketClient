@@ -17,7 +17,6 @@ class Protocol {
     private final BigInteger n;
     private final BigInteger q;
     private final Engine engine;
-    private final Seeds clientsSeeds;
     public byte[] publicSeed;
     private final Polynomial aNtt;
     private final Ntt ntt;
@@ -44,7 +43,6 @@ class Protocol {
         this.n = n;
         this.q = q;
         this.engine = new Engine();
-        this.clientsSeeds = createSeeds();
         this.publicSeed = new byte[34];
         this.ntt = new Ntt(n, q);
         this.mlkem = new Mlkem(n, q);
