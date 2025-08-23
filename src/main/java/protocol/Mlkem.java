@@ -73,21 +73,21 @@ class Mlkem {
     }
 
     // TODO: Change it for dynamic n, q.
-    void generateUniformPolynomialNtt(Engine ss, Polynomial a, byte[] seed) {
+    void generateUniformPolynomialNtt(Engine e, Polynomial a, byte[] seed) {
         int KyberGenerateMatrixNBlocks = (int)  // its value is 23  // !!! Conversions BigInteger -> int
                 (
                         (
                                 (float) 30 * n.intValue() / 8  // how many bytes do I need to sample
                                         * (float) (1 << 30) / q.intValue()  // (probability of success) ^ -1, SO together it is in average how many bytes we need for sampling
-                                        + (float) ss.xofBlockBytes
+                                        + (float) e.xofBlockBytes
                         )
-                                / ss.xofBlockBytes  // thanks to `+ xBB / xBB` we now have the closest needed higher amount of xBB
+                                / e.xofBlockBytes  // thanks to `+ xBB / xBB` we now have the closest needed higher amount of xBB
                 );
         int k, ctr, off;
-        int buflen = KyberGenerateMatrixNBlocks * ss.xofBlockBytes;  // currently it is not divisible by 15!
+        int buflen = KyberGenerateMatrixNBlocks * e.xofBlockBytes;  // currently it is not divisible by 15!
         byte[] buf = new byte[buflen];
-        ss.xofAbsorb(seed);
-        ss.xofSqueezeBlocks(buf, 0, buflen);
+        e.xofAbsorb(seed);
+        e.xofSqueezeBlocks(buf, 0, buflen);
 
         ctr = rejectionSampling(a, 0, n.intValue(), buf, buflen);  // number of samples coefficients  // !!! Conversion to int
 
@@ -96,7 +96,7 @@ class Mlkem {
             for (k = 0; k < off; k++) {  // move unused bytes to the beginning of the buf
                 buf[k] = buf[buflen - off + k];
             }
-            ss.xofSqueezeBlocks(buf, off, buflen - off);  // fill the rest of buf
+            e.xofSqueezeBlocks(buf, off, buflen - off);  // fill the rest of buf
             ctr += rejectionSampling(a, ctr, n.intValue() - ctr, buf, buflen);  // !!! Conversion to int
         }
     }
