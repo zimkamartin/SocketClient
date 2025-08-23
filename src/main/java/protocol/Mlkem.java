@@ -73,7 +73,7 @@ class Mlkem {
     }
 
     // TODO: Change it for dynamic n, q.
-    void generateUniformPolynomialNtt(ShakeSymmetric ss, Polynomial a, byte[] seed) {
+    void generateUniformPolynomialNtt(Engine ss, Polynomial a, byte[] seed) {
         int KyberGenerateMatrixNBlocks = (int)  // its value is 23  // !!! Conversions BigInteger -> int
                 (
                         (
