@@ -51,4 +51,8 @@ class Engine {
     public void getRandomBytes(byte[] buf) {
         this.random.nextBytes(buf);
     }
+
+    public int getRandomBit() {
+        return this.random.nextInt(2);
+    }
 }
