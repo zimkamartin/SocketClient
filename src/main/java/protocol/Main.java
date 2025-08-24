@@ -38,26 +38,21 @@ public class Main {
         return new String(bytes);
     }
 
-    private static void sendMessage(SocketChannel channel, String message) throws IOException {
-        ByteBuffer buffer = ByteBuffer.wrap(message.getBytes());
-        while (buffer.hasRemaining()) {
-            channel.write(buffer);
-        }
-    }
-
     public static void main(String[] args) throws IOException {
 
         Protocol protocol = new Protocol(N, Q, ETA);
         publicSeed = protocol.generatePublicSeed();
 
+        Path socketPath = Path.of(System.getProperty("user.home")).resolve("socket");
+        UnixDomainSocketAddress socketAddress = UnixDomainSocketAddress.of(socketPath);
 
+        try (SocketChannel channel = SocketChannel.open(StandardProtocolFamily.UNIX)) {
+            channel.connect(socketAddress);
 
-//        Path socketPath = Path.of(System.getProperty("user.home")).resolve("socket");
-//        UnixDomainSocketAddress socketAddress = UnixDomainSocketAddress.of(socketPath);
-//
-//        try (SocketChannel channel = SocketChannel.open(StandardProtocolFamily.UNIX)) {
-//            channel.connect(socketAddress);
-//
+            if (!protocol.phase0(channel, publicSeed)) {
+                // TODO do smth
+            }
+
 //            // 1. Send message to server
 //            String msg1 = "Hello Server!";
 //            sendMessage(channel, msg1);
@@ -75,6 +70,6 @@ public class Main {
 //            // 4. Receive final reply
 //            String reply2 = readMessage(channel);
 //            System.out.println("[Server] " + reply2);
-//        }
+        }
     }
 }

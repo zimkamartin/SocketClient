@@ -1,9 +1,13 @@
 package protocol;
 
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
+import java.nio.charset.StandardCharsets;
 
 /**
- * Represents the whole protocol from the article.
+ * Represents the whole protocol from the article. (Together with sending and receiving messages to and from server.)
  * <p>
  * Source for the protocol: https://eprint.iacr.org/2017/1196.pdf
  * </p>
@@ -13,6 +17,9 @@ class Protocol {
     private static final String I = "identity123";
     private static final String PWD = "password123";
     // THIS IS NOT HOW TO DO IT !!! THIS IS JUST FOR PROOF-OF-CONCEPT !!! THIS IS NOT HOW TO DO IT !!!
+    private static final int IDENTITYBYTESIZE = 11;  // all characters are ASCII, so 1 char per byte // that size is just made up
+    private static final int PUBLICSEEDBYTESIZE = 34;
+    private static final int SALTBYTESIZE = 11;  // that size is just made up
     private final int n;
     private final BigInteger q;
     private final int eta;
@@ -31,7 +38,7 @@ class Protocol {
 
     private Seeds createSeeds() {
         // seed1 = SHA3-256(salt||SHA3-256(I||pwd))
-        byte[] salt =  new byte[11];  // I just guessed this constant, look into security of that.
+        byte[] salt =  new byte[SALTBYTESIZE];
         engine.getRandomBytes(salt);
         String innerInput = I.concat(PWD);
         byte[] innerHash = new byte[32];
@@ -49,7 +56,7 @@ class Protocol {
     }
 
     public byte[] generatePublicSeed() {
-        byte[] publicSeed = new byte[34];
+        byte[] publicSeed = new byte[PUBLICSEEDBYTESIZE];
         engine.getRandomBytes(publicSeed);
         return publicSeed;
     }
@@ -60,17 +67,48 @@ class Protocol {
         mlkem.generateCbdPolynomial(r, buf, eta);
     }
 
-    // TODO send I, salt, v to server
-    void phase0(byte[] publicSeed) {
+    private static boolean sendMessage(SocketChannel channel, byte[] message) {
+        try {
+            ByteBuffer buffer = ByteBuffer.wrap(message);
+            while (buffer.hasRemaining()) {
+                channel.write(buffer);
+            }
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    private boolean sendPhase0ToServer(SocketChannel channel, byte[] publicSeed, String identity, byte[] salt, Polynomial vNtt) {
+        // Build the message //
+        byte[] identityBytes = identity.getBytes(StandardCharsets.UTF_8);
+        byte[] vNttBytes = vNtt.toBytes();
+        int totalLen = PUBLICSEEDBYTESIZE + IDENTITYBYTESIZE + SALTBYTESIZE + vNttBytes.length;
+        ByteBuffer msg = ByteBuffer.allocate(totalLen);
+        msg.put(publicSeed);
+        msg.put(identityBytes);
+        msg.put(salt);
+        msg.put(vNttBytes);
+        byte[] msgByteArray = new byte[totalLen];
+        // Send the message //
+        if (!sendMessage(channel, msgByteArray)) {
+            System.out.println("PHASE 0 : Sending message to Server FAILED !");
+            return false;
+        }
+        System.out.println("PHASE 0 : Sending message to Server SUCCEEDED !");
+        return true;
+    }
+
+    // TODO send publicSeed, I, salt, v to server
+    boolean phase0(SocketChannel channel, byte[] publicSeed) {
         // v = asv + 2ev  //
-        // seed1 = SHA3-256(salt||SHA3-256(I||pwd)); seed2 = SHA3-256(seed1)  //
         // Create polynomial a from public seed.
-        Polynomial aNtt = new Polynomial(new BigInteger[n]);
+        Polynomial aNtt = new Polynomial(new BigInteger[n], q);
         mlkem.generateUniformPolynomialNtt(engine, aNtt, publicSeed);
         // Based on seeds (computed from private values) generate sv, ev.
         Seeds seeds = createSeeds();
-        Polynomial sv = new Polynomial(new BigInteger[n]);
-        Polynomial ev = new Polynomial(new BigInteger[n]);
+        Polynomial sv = new Polynomial(new BigInteger[n], q);
+        Polynomial ev = new Polynomial(new BigInteger[n], q);
         getEtaNoise(sv, seeds.getSeed1());
         getEtaNoise(ev, seeds.getSeed2());
         Polynomial svNtt = ntt.convertToNtt(sv);
@@ -79,6 +117,9 @@ class Protocol {
         Polynomial aSvNtt = ntt.multiplyNttPolys(aNtt, svNtt);
         Polynomial twoEvNtt = ntt.multiplyNttPolys(ntt.generateConstantTwoPolynomialNtt(), evNtt);
         Polynomial vNtt = ntt.add(aSvNtt, twoEvNtt);
+
+        // Send it to the server.
+        return sendPhase0ToServer(channel, publicSeed, I, seeds.getSalt(), vNtt);
     }
 
     // TODO add sending and receiving to and from server
@@ -86,16 +127,16 @@ class Protocol {
         Polynomial constantTwoPolyNtt = ntt.generateConstantTwoPolynomialNtt();
         // pi = as1 + 2e1 //
         // Compute a.
-        Polynomial aNtt = new Polynomial(new BigInteger[n]);
+        Polynomial aNtt = new Polynomial(new BigInteger[n], q);
         mlkem.generateUniformPolynomialNtt(engine, aNtt, publicSeed);
         // Compute s1.
-        Polynomial s1 = new Polynomial(new BigInteger[n]);
+        Polynomial s1 = new Polynomial(new BigInteger[n], q);
         byte[] s1RandomSeed = new byte[34];
         engine.getRandomBytes(s1RandomSeed);
         getEtaNoise(s1, s1RandomSeed);
         Polynomial s1Ntt = ntt.convertToNtt(s1);
         // Compute e1.
-        Polynomial e1 = new Polynomial(new BigInteger[n]);
+        Polynomial e1 = new Polynomial(new BigInteger[n], q);
         byte[] e1RandomSeed = new byte[34];
         engine.getRandomBytes(e1RandomSeed);
         getEtaNoise(e1, e1RandomSeed);
