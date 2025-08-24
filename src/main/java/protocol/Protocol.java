@@ -20,6 +20,7 @@ class Protocol {
     private static final int IDENTITYBYTESIZE = 11;  // all characters are ASCII, so 1 char per byte // that size is just made up
     private static final int PUBLICSEEDBYTESIZE = 34;
     private static final int SALTBYTESIZE = 11;  // that size is just made up
+    private final int coeffsByteSize;
     private final int n;
     private final BigInteger q;
     private final int eta;
@@ -34,6 +35,8 @@ class Protocol {
         this.engine = new Engine();
         this.ntt = new Ntt(this.n, this.q);
         this.mlkem = new Mlkem(this.n, this.q);
+        this.coeffsByteSize = n * (int) ((q.subtract(BigInteger.ONE).bitLength() + 1 + 7) / 8);  // + 1 because of the sign bit
+        // ^^ ceiling
     }
 
     private Seeds createSeeds() {
@@ -83,13 +86,13 @@ class Protocol {
         // Build the message //
         byte[] identityBytes = identity.getBytes(StandardCharsets.UTF_8);
         byte[] vNttBytes = vNtt.toBytes();
-        int totalLen = PUBLICSEEDBYTESIZE + IDENTITYBYTESIZE + SALTBYTESIZE + vNttBytes.length;
+        int totalLen = PUBLICSEEDBYTESIZE + IDENTITYBYTESIZE + SALTBYTESIZE + coeffsByteSize;
         ByteBuffer msg = ByteBuffer.allocate(totalLen);
         msg.put(publicSeed);
         msg.put(identityBytes);
         msg.put(salt);
         msg.put(vNttBytes);
-        byte[] msgByteArray = new byte[totalLen];
+        byte[] msgByteArray = msg.array();
         // Send the message //
         if (!sendMessage(channel, msgByteArray)) {
             System.out.println("PHASE 0 : Sending message to Server FAILED !");

@@ -15,7 +15,7 @@ import java.util.Arrays;
  * N - polynomial size - must be power of 2 and fit into int data type
  * Q - defines Z_Q for coefficients in the polynomials - must be prime, must be congruent with 1 modulo 2 * N
  * ETA - defines Central binomial distribution when generating error polynomials.
- * SOURCE for Server communication logic: https://www.baeldung.com/java-unix-domain-socket
+ * SOURCE for Client communication logic: https://www.baeldung.com/java-unix-domain-socket
  * SOURCE for simple message exchange: CHATGPT
  * </p>
  */
