@@ -13,7 +13,7 @@ import java.util.*;
  */
 class Ntt {
 
-    private final BigInteger n;
+    private final int n;
     private final BigInteger q;
 
     private final List<BigInteger> zetas = new ArrayList<>();
@@ -25,16 +25,16 @@ class Ntt {
      * Computes tree of modulo polynomials. Everything from layer X^(n//2) to X^1.
      */
     private void computeNttTree() {
-        BigInteger powerX = n.divide(BigInteger.TWO);
+        int powerX = n / 2;
         BigInteger indexZeta = BigInteger.valueOf(4);
         List<ModuloPoly> fstLayer = new ArrayList<>();
-        fstLayer.add(new ModuloPoly(powerX, true, BigInteger.ONE, indexZeta));
-        fstLayer.add(new ModuloPoly(powerX, false, BigInteger.ONE, indexZeta));
+        fstLayer.add(new ModuloPoly(true, BigInteger.ONE, indexZeta));
+        fstLayer.add(new ModuloPoly(false, BigInteger.ONE, indexZeta));
         nttTree.add(fstLayer);
 
-        while (powerX.compareTo(BigInteger.ONE) > 0) {
+        while (powerX > 1) {
 
-            powerX = powerX.divide(BigInteger.TWO);
+            powerX = powerX / 2;
             indexZeta = indexZeta.multiply(BigInteger.TWO);
 
             List<ModuloPoly> newLayer = new ArrayList<>();
@@ -44,8 +44,8 @@ class Ntt {
                 if (poly.getPlus()) {
                     powerZeta = powerZeta.add(poly.getIndexZeta().divide(BigInteger.TWO));
                 }
-                ModuloPoly plusPoly = new ModuloPoly(powerX, true, powerZeta, indexZeta);
-                ModuloPoly minusPoly = new ModuloPoly(powerX, false, powerZeta, indexZeta);
+                ModuloPoly plusPoly = new ModuloPoly(true, powerZeta, indexZeta);
+                ModuloPoly minusPoly = new ModuloPoly(false, powerZeta, indexZeta);
                 newLayer.add(plusPoly);
                 newLayer.add(minusPoly);
             }
@@ -54,13 +54,13 @@ class Ntt {
     }
 
     private void generateArrays(BigInteger zeta) {
-        BigInteger nRoot = (BigInteger.TWO).multiply(n);
+        BigInteger nRoot = BigInteger.TWO.multiply(BigInteger.valueOf(n));
         for (List<ModuloPoly> layer: nttTree) {
-            for (BigInteger i = BigInteger.ZERO; i.compareTo(BigInteger.valueOf(layer.size())) < 0; i = i.add(BigInteger.ONE)) {
-                if (i.mod(BigInteger.TWO).compareTo(BigInteger.ONE) == 0) {
+            for (int i = 0; i < layer.size(); i++) {
+                if (i % 2 == 1) {
                     continue;
                 }
-                ModuloPoly poly = layer.get(i.intValue());  // !!! conversion from BigInteger to Int !!!
+                ModuloPoly poly = layer.get(i);
                 BigInteger power = poly.getPowerZeta();
                 BigInteger index = poly.getIndexZeta();
                 BigInteger z = zeta.modPow(nRoot.divide(index), q).modPow(power, q);
@@ -98,7 +98,7 @@ class Ntt {
      * </p>
      */
     private BigInteger computePrimitiveRoot() {
-        BigInteger exp = (q.subtract(BigInteger.ONE)).divide((BigInteger.TWO).multiply(n));
+        BigInteger exp = (q.subtract(BigInteger.ONE)).divide((BigInteger.TWO).multiply(BigInteger.valueOf(n)));
         Set<BigInteger> primeFactors = findPrimeFactors(q.subtract(BigInteger.ONE));
         for (BigInteger g = BigInteger.TWO; g.compareTo(q) < 0; g = g.add(BigInteger.ONE)) {
             BigInteger x = g.modPow(exp, q);
@@ -125,29 +125,29 @@ class Ntt {
         generateArrays(zeta);
     }
 
-    Ntt(BigInteger n, BigInteger q) {
+    Ntt(int n, BigInteger q) {
         this.n = n;
         this.q = q;
         computeZetaArrays();
     }
 
     Polynomial generateConstantPolynomialNtt(BigInteger c) {
-        BigInteger[] coeffs = new BigInteger[n.intValue()];  // !!! Conversion to int
+        BigInteger[] coeffs = new BigInteger[n];
         Arrays.fill(coeffs, c);
         return new Polynomial(coeffs);
     }
 
     Polynomial add(Polynomial a, Polynomial b) {
-        BigInteger[] resultingCoeffs = new BigInteger[n.intValue()];  // !!! Conversion to int
-        for (int i = 0; i < n.intValue(); i = i + 1) {  // !!! Conversion to int
+        BigInteger[] resultingCoeffs = new BigInteger[n];
+        for (int i = 0; i < n; i = i + 1) {
             resultingCoeffs[i] = a.getCoeffIndex(i).add(b.getCoeffIndex(i)).mod(q);
         }
         return new Polynomial(resultingCoeffs);
     }
 
     Polynomial inverse(Polynomial a) {
-        BigInteger[] resultingCoeffs = new BigInteger[n.intValue()];  // !!! Conversion to int
-        for (int i = 0; i < n.intValue(); i = i + 1) {  // !!! Conversion to int
+        BigInteger[] resultingCoeffs = new BigInteger[n];
+        for (int i = 0; i < n; i = i + 1) {
             resultingCoeffs[i] = a.getCoeffIndex(i).negate().mod(q);
         }
         return new Polynomial(resultingCoeffs);
@@ -161,18 +161,18 @@ class Ntt {
         Polynomial polyNtt = new Polynomial(inputPoly.getCoeffs());
         int zetaIndex = 0;
 
-        for (BigInteger layer = BigInteger.ZERO; layer.compareTo(BigInteger.valueOf(n.bitLength() - 1)) < 0; layer = layer.add(BigInteger.ONE)) {
-            BigInteger numOfSubpolys = BigInteger.TWO.pow(layer.intValue());  // !!! Conversion to int
-            BigInteger lenOfSubpoly = n.divide(numOfSubpolys);
-            for (BigInteger subpolyCounter = BigInteger.ZERO; subpolyCounter.compareTo(numOfSubpolys) < 0; subpolyCounter = subpolyCounter.add(BigInteger.ONE)) {
-                BigInteger polyLstIndex = subpolyCounter.multiply(lenOfSubpoly).subtract(BigInteger.ONE);
-                BigInteger limit = lenOfSubpoly.divide(BigInteger.TWO).add(polyLstIndex).add(BigInteger.ONE);
-                for (BigInteger subpolyIndex = polyLstIndex.add(BigInteger.ONE); subpolyIndex.compareTo(limit) < 0; subpolyIndex = subpolyIndex.add(BigInteger.ONE)) {
-                    BigInteger subpolyHalfIndex = lenOfSubpoly.divide(BigInteger.TWO).add(subpolyIndex);
-                    BigInteger oldSubpolyCoeff = polyNtt.getCoeffIndex(subpolyIndex.intValue());
-                    BigInteger oldSubpolyHalfCoeff = polyNtt.getCoeffIndex(subpolyHalfIndex.intValue());
-                    polyNtt.setCoeffIndex(subpolyIndex.intValue(), (oldSubpolyCoeff.subtract(zetas.get(zetaIndex).multiply(oldSubpolyHalfCoeff))).mod(q));
-                    polyNtt.setCoeffIndex(subpolyHalfIndex.intValue(), (oldSubpolyCoeff.add(zetas.get(zetaIndex).multiply(oldSubpolyHalfCoeff))).mod(q));
+        int numOfLayers = (int) (Math.log(n) / Math.log(2));
+        for (int layer = 0; layer < numOfLayers; layer++) {
+            int numOfSubpolys = (int) Math.pow(2, layer);
+            int lenOfSubpoly = n / numOfSubpolys;
+            for (int subpolyCounter = 0; subpolyCounter < numOfSubpolys; subpolyCounter++) {
+                int polyLstIndex = subpolyCounter * lenOfSubpoly - 1;
+                for (int subpolyIndex = polyLstIndex + 1; subpolyIndex < polyLstIndex + 1 + lenOfSubpoly / 2; subpolyIndex++) {
+                    int subpolyHalfIndex = subpolyIndex + lenOfSubpoly / 2;
+                    BigInteger oldSubpolyCoeff = polyNtt.getCoeffIndex(subpolyIndex);
+                    BigInteger oldSubpolyHalfCoeff = polyNtt.getCoeffIndex(subpolyHalfIndex);
+                    polyNtt.setCoeffIndex(subpolyIndex, (oldSubpolyCoeff.subtract(zetas.get(zetaIndex).multiply(oldSubpolyHalfCoeff))).mod(q));
+                    polyNtt.setCoeffIndex(subpolyHalfIndex, (oldSubpolyCoeff.add(zetas.get(zetaIndex).multiply(oldSubpolyHalfCoeff))).mod(q));
                 }
                 zetaIndex++;
             }
@@ -182,8 +182,8 @@ class Ntt {
     }
 
     Polynomial multiplyNttPolys(Polynomial a, Polynomial b) {
-        BigInteger[] resultingCoeffs = new BigInteger[n.intValue()];  // !!! Conversion to int
-        for (int i = 0; i < n.intValue(); i = i + 1) {  // !!! Conversion to int
+        BigInteger[] resultingCoeffs = new BigInteger[n];
+        for (int i = 0; i < n; i = i + 1) {
             resultingCoeffs[i] = a.getCoeffIndex(i).multiply(b.getCoeffIndex(i)).mod(q);
         }
         return new Polynomial(resultingCoeffs);
@@ -193,26 +193,25 @@ class Ntt {
         Polynomial poly = new Polynomial(inputPoly.getCoeffs());
         int zetaIndex = zetasInverted.size() - 1;
 
-        BigInteger numOfLayers = BigInteger.valueOf(n.bitLength() - 1);
-        for (BigInteger layer = numOfLayers.subtract(BigInteger.ONE); layer.compareTo(BigInteger.ZERO) >= 0; layer = layer.subtract(BigInteger.ONE)) {
-            BigInteger numOfSubpolys = BigInteger.TWO.pow(layer.intValue());  // !!! Conversion to int
-            BigInteger lenOfSubpoly = n.divide(numOfSubpolys);
-            for (BigInteger subpolyCounter = numOfSubpolys.subtract(BigInteger.ONE); subpolyCounter.compareTo(BigInteger.ZERO) >= 0; subpolyCounter = subpolyCounter.subtract(BigInteger.ONE)) {
-                BigInteger polyLstIndex = subpolyCounter.multiply(lenOfSubpoly).add(lenOfSubpoly);
-                BigInteger limit = polyLstIndex.subtract(BigInteger.ONE).subtract(lenOfSubpoly.divide(BigInteger.TWO));
-                for (BigInteger subpolyHalfIndex = polyLstIndex.subtract(BigInteger.ONE); subpolyHalfIndex.compareTo(limit) > 0; subpolyHalfIndex = subpolyHalfIndex.subtract(BigInteger.ONE)) {
-                    BigInteger subpolyIndex = subpolyHalfIndex.subtract(lenOfSubpoly.divide(BigInteger.TWO));
-                    BigInteger oldSubpolyCoeff = poly.getCoeffIndex(subpolyIndex.intValue());
-                    BigInteger oldSubpolyHalfCoeff = poly.getCoeffIndex(subpolyHalfIndex.intValue());
-                    poly.setCoeffIndex(subpolyIndex.intValue(), oldSubpolyCoeff.add(oldSubpolyHalfCoeff).mod(q));
-                    poly.setCoeffIndex(subpolyHalfIndex.intValue(), zetasInverted.get(zetaIndex).negate().multiply(oldSubpolyCoeff.subtract(oldSubpolyHalfCoeff)).mod(q));
+        int numOfLayers = (int) (Math.log(n) / Math.log(2));
+        for (int layer = numOfLayers - 1; layer >= 0; layer--) {
+            int numOfSubpolys = (int) Math.pow(2, layer);
+            int lenOfSubpoly = n / numOfSubpolys;
+            for (int subpolyCounter = numOfSubpolys - 1; subpolyCounter >= 0; subpolyCounter--) {
+                int polyLstIndex = subpolyCounter * lenOfSubpoly + lenOfSubpoly;
+                for (int subpolyHalfIndex = polyLstIndex - 1; subpolyHalfIndex > polyLstIndex - 1 - lenOfSubpoly / 2; subpolyHalfIndex--) {
+                    int subpolyIndex = subpolyHalfIndex - lenOfSubpoly / 2;
+                    BigInteger oldSubpolyCoeff = poly.getCoeffIndex(subpolyIndex);
+                    BigInteger oldSubpolyHalfCoeff = poly.getCoeffIndex(subpolyHalfIndex);
+                    poly.setCoeffIndex(subpolyIndex, oldSubpolyCoeff.add(oldSubpolyHalfCoeff).mod(q));
+                    poly.setCoeffIndex(subpolyHalfIndex, zetasInverted.get(zetaIndex).negate().multiply(oldSubpolyCoeff.subtract(oldSubpolyHalfCoeff)).mod(q));
                 }
                 zetaIndex--;
             }
         }
 
-        BigInteger twoDivisor = BigInteger.TWO.modPow(numOfLayers.negate(), q);
-        for (int i = 0; i < n.intValue(); i = i + 1) {  // !!! Conversion to int
+        BigInteger twoDivisor = BigInteger.TWO.modPow(BigInteger.valueOf(numOfLayers).negate(), q);
+        for (int i = 0; i < n; i = i + 1) {
             poly.setCoeffIndex(i, poly.getCoeffIndex(i).multiply(twoDivisor).mod(q));
         }
         return poly;

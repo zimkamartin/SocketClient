@@ -14,14 +14,14 @@ class Protocol {
     private static final String PWD = "password123";
     private static final byte[] SALT = "salt123".getBytes();
     // THIS IS NOT HOW TO DO IT !!! THIS IS JUST FOR PROOF-OF-CONCEPT !!! THIS IS NOT HOW TO DO IT !!!
-    private final BigInteger n;
+    private final int n;
     private final BigInteger q;
     private final int eta;
     private final Engine engine;
     private final Ntt ntt;
     private final Mlkem mlkem;
 
-    Protocol(BigInteger n, BigInteger q, int eta) {
+    Protocol(int n, BigInteger q, int eta) {
         this.n = n;
         this.q = q;
         this.eta = eta;
@@ -54,7 +54,7 @@ class Protocol {
     }
 
     private void getEtaNoise(Polynomial r, byte[] seed) {
-        byte[] buf = new byte[n.intValue() * eta / 4];
+        byte[] buf = new byte[n * eta / 4];
         engine.prf(buf, seed);
         mlkem.generateCbdPolynomial(r, buf, eta);
     }
@@ -64,12 +64,12 @@ class Protocol {
         // v = asv + 2ev  //
         // seed1 = SHA3-256(salt||SHA3-256(I||pwd)); seed2 = SHA3-256(seed1)  //
         // Create polynomial a from public seed.
-        Polynomial aNtt = new Polynomial(new BigInteger[n.intValue()]);  // !!! conversion to int !!!
+        Polynomial aNtt = new Polynomial(new BigInteger[n]);
         mlkem.generateUniformPolynomialNtt(engine, aNtt, publicSeed);
         // Based on seeds (computed from private values) generate sv, ev.
         Seeds seeds = createSeeds();
-        Polynomial sv = new Polynomial(new BigInteger[n.intValue()]);  // !!! conversion to int !!!
-        Polynomial ev = new Polynomial(new BigInteger[n.intValue()]);  // !!! conversion to int !!!
+        Polynomial sv = new Polynomial(new BigInteger[n]);
+        Polynomial ev = new Polynomial(new BigInteger[n]);
         getEtaNoise(sv, seeds.getSeed1());
         getEtaNoise(ev, seeds.getSeed2());
         Polynomial svNtt = ntt.convertToNtt(sv);
@@ -80,8 +80,31 @@ class Protocol {
         Polynomial vNtt = ntt.add(aSvNtt, twoEvNtt);
     }
 
-    // TODO
-    void phase1() {
+    // TODO add sending and receiving to and from server
+    void phase1(byte[] publicSeed) {
+        Polynomial constantTwoPolyNtt = ntt.generateConstantPolynomialNtt(BigInteger.TWO);
+        // pi = as1 + 2e1 //
+        // Compute a.
+        Polynomial aNtt = new Polynomial(new BigInteger[n]);
+        mlkem.generateUniformPolynomialNtt(engine, aNtt, publicSeed);
+        // Compute s1.
+        Polynomial s1 = new Polynomial(new BigInteger[n]);
+        byte[] s1RandomSeed = new byte[34];
+        engine.getRandomBytes(s1RandomSeed);
+        getEtaNoise(s1, s1RandomSeed);
+        Polynomial s1Ntt = ntt.convertToNtt(s1);
+        // Compute e1.
+        Polynomial e1 = new Polynomial(new BigInteger[n]);
+        byte[] e1RandomSeed = new byte[34];
+        engine.getRandomBytes(e1RandomSeed);
+        getEtaNoise(e1, e1RandomSeed);
+        Polynomial e1Ntt = ntt.convertFromNtt(e1);
+        // Do all the math
+        Polynomial aS1Ntt = ntt.multiplyNttPolys(aNtt, s1Ntt);
+        Polynomial twoE1Ntt = ntt.multiplyNttPolys(constantTwoPolyNtt, e1Ntt);
+        Polynomial piNtt = ntt.add(aS1Ntt, twoE1Ntt);
+
+
     }
 
     // TODO

@@ -13,10 +13,10 @@ import java.math.BigInteger;
  */
 class Mlkem {
 
-    private final BigInteger n;
+    private final int n;
     private final BigInteger q;
 
-    Mlkem(BigInteger n, BigInteger q) {
+    Mlkem(int n, BigInteger q) {
         this.n = n;
         this.q = q;
     }
@@ -76,11 +76,12 @@ class Mlkem {
     }
 
     // TODO: Change it for dynamic n, q.
+    // TODO: Solve q.intValue()
     void generateUniformPolynomialNtt(Engine e, Polynomial a, byte[] seed) {
         int KyberGenerateMatrixNBlocks = (int)  // its value is 23  // !!! Conversions BigInteger -> int
                 (
                         (
-                                (float) 30 * n.intValue() / 8  // how many bytes do I need to sample
+                                (float) 30 * n / 8  // how many bytes do I need to sample
                                         * (float) (1 << 30) / q.intValue()  // (probability of success) ^ -1, SO together it is in average how many bytes we need for sampling
                                         + (float) e.xofBlockBytes
                         )
@@ -92,15 +93,15 @@ class Mlkem {
         e.xofAbsorb(seed);
         e.xofSqueezeBlocks(buf, 0, buflen);
 
-        ctr = rejectionSampling(a, 0, n.intValue(), buf, buflen);  // number of samples coefficients  // !!! Conversion to int
+        ctr = rejectionSampling(a, 0, n, buf, buflen);  // number of samples coefficients
 
-        while (ctr < n.intValue()) {  // we did not sample enough coeffs  // !!! Conversion to int
+        while (ctr < n) {  // we did not sample enough coeffs
             off = buflen % 15;  // how many unused bytes is in buf?
             for (k = 0; k < off; k++) {  // move unused bytes to the beginning of the buf
                 buf[k] = buf[buflen - off + k];
             }
             e.xofSqueezeBlocks(buf, off, buflen - off);  // fill the rest of buf
-            ctr += rejectionSampling(a, ctr, n.intValue() - ctr, buf, buflen);  // !!! Conversion to int
+            ctr += rejectionSampling(a, ctr, n - ctr, buf, buflen);
         }
     }
 
@@ -117,7 +118,7 @@ class Mlkem {
         long t, d;
         int a, b;
 
-        for (int i = 0; i < n.intValue() / 4; i++) {  // When eta is equal to 3.  // !!! Conversion to int !!!
+        for (int i = 0; i < n / 4; i++) {  // When eta is equal to 3.  // !!! Conversion to int !!!
             t = convertByteTo24BitUnsignedInt(bytes, 3 * i);
             d = t & 0x00249249;
             d = d + ((t >> 1) & 0x00249249);

@@ -7,25 +7,20 @@ import java.math.BigInteger;
  * <p>
  * These polynomials are of the following form: X^powerX P (zeta_indexZeta)^powerZeta,
  * where P is plus if plus, else it is minus.
+ * Attribute powerX do not need to be stored.
  * For more details see https://electricdusk.com/ntt.html
  * </p>
  */
 class ModuloPoly {
 
-    private final BigInteger powerX;
     private final boolean plus;
     private final BigInteger powerZeta;
     private final BigInteger indexZeta;
 
-    ModuloPoly(BigInteger powerX, boolean plus, BigInteger powerZeta, BigInteger indexZeta) {
-        this.powerX = powerX;
+    ModuloPoly(boolean plus, BigInteger powerZeta, BigInteger indexZeta) {
         this.plus = plus;
         this.powerZeta = powerZeta;
         this.indexZeta = indexZeta;
-    }
-
-    BigInteger getPowerX() {
-        return powerX;
     }
 
     boolean getPlus() {

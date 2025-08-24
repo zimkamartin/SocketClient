@@ -13,8 +13,8 @@ import java.util.Arrays;
 // SOURCE for simple message exchange: CHATGPT
 public class Main {
 
-    private static final BigInteger N = BigInteger.valueOf(8);
-    private static final BigInteger Q = BigInteger.valueOf(17);
+    private static final int N = 1024;
+    private static final BigInteger Q = BigInteger.valueOf(1073479681);
     private static final int ETA = 3;
 
     static byte[] publicSeed;
