@@ -21,4 +21,8 @@ class Seeds {
     byte[] getSeed2() {
         return this.seed2;
     }
+
+    byte[] getSalt() {
+        return this.salt;
+    }
 }
