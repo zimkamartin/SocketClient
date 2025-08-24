@@ -76,13 +76,13 @@ class Protocol {
         Polynomial evNtt = ntt.convertFromNtt(ev);
         // Do all the math.
         Polynomial aSvNtt = ntt.multiplyNttPolys(aNtt, svNtt);
-        Polynomial twoEvNtt = ntt.multiplyNttPolys(ntt.generateConstantPolynomialNtt(BigInteger.TWO), evNtt);
+        Polynomial twoEvNtt = ntt.multiplyNttPolys(ntt.generateConstantTwoPolynomialNtt(), evNtt);
         Polynomial vNtt = ntt.add(aSvNtt, twoEvNtt);
     }
 
     // TODO add sending and receiving to and from server
     void phase1(byte[] publicSeed) {
-        Polynomial constantTwoPolyNtt = ntt.generateConstantPolynomialNtt(BigInteger.TWO);
+        Polynomial constantTwoPolyNtt = ntt.generateConstantTwoPolynomialNtt();
         // pi = as1 + 2e1 //
         // Compute a.
         Polynomial aNtt = new Polynomial(new BigInteger[n]);

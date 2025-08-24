@@ -131,9 +131,9 @@ class Ntt {
         computeZetaArrays();
     }
 
-    Polynomial generateConstantPolynomialNtt(BigInteger c) {
+    Polynomial generateConstantTwoPolynomialNtt() {
         BigInteger[] coeffs = new BigInteger[n];
-        Arrays.fill(coeffs, c);
+        Arrays.fill(coeffs, BigInteger.TWO);
         return new Polynomial(coeffs);
     }
 
