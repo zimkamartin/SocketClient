@@ -12,7 +12,6 @@ class Protocol {
     // THIS IS NOT HOW TO DO IT !!! THIS IS JUST FOR PROOF-OF-CONCEPT !!! THIS IS NOT HOW TO DO IT !!!
     private static final String I = "identity123";
     private static final String PWD = "password123";
-    private static final byte[] SALT = "salt123".getBytes();
     // THIS IS NOT HOW TO DO IT !!! THIS IS JUST FOR PROOF-OF-CONCEPT !!! THIS IS NOT HOW TO DO IT !!!
     private final int n;
     private final BigInteger q;
@@ -32,19 +31,21 @@ class Protocol {
 
     private Seeds createSeeds() {
         // seed1 = SHA3-256(salt||SHA3-256(I||pwd))
+        byte[] salt =  new byte[11];  // I just guessed this constant, look into security of that.
+        engine.getRandomBytes(salt);
         String innerInput = I.concat(PWD);
         byte[] innerHash = new byte[32];
         engine.hash(innerHash, innerInput.getBytes());
-        byte[] outerInput = new byte[SALT.length + innerHash.length];
-        System.arraycopy(SALT, 0, outerInput, 0, SALT.length);
-        System.arraycopy(innerHash, 0, outerInput, SALT.length, innerHash.length);
+        byte[] outerInput = new byte[salt.length + innerHash.length];
+        System.arraycopy(salt, 0, outerInput, 0, salt.length);
+        System.arraycopy(innerHash, 0, outerInput, salt.length, innerHash.length);
         byte[] seed1 = new byte[32];
         engine.hash(seed1, outerInput);
         // seed2 = SHA3-256(seed1)
         byte[] seed2 = new byte[32];
         engine.hash(seed2, seed1);
 
-        return new Seeds(seed1, seed2);
+        return new Seeds(seed1, seed2, salt);
     }
 
     public byte[] generatePublicSeed() {
