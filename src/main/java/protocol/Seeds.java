@@ -1,5 +1,8 @@
 package protocol;
 
+/**
+ * Represents seed1 and seed2 from the protocol.
+ */
 class Seeds {
     private final byte[] seed1;
     private final byte[] seed2;

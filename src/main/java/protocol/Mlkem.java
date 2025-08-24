@@ -5,7 +5,8 @@ import java.math.BigInteger;
 /**
  * Extracted (and modified) all needed functions from MLKEM.
  * <p>
- * Functions are modified, however heavily inspired by
+ * Functions are modified so they can dynamically adapt to different N, Q, ETA.
+ * However, their building blocks are heavily inspired by
  * https://github.com/bcgit/bc-java/blob/main/core/src/main/java/org/bouncycastle/pqc/crypto/mlkem/MLKEMIndCpa.java
  * and
  * https://github.com/bcgit/bc-java/blob/main/core/src/main/java/org/bouncycastle/pqc/crypto/mlkem/CBD.java

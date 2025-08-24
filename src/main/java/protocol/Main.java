@@ -9,8 +9,16 @@ import java.nio.channels.SocketChannel;
 import java.nio.file.Path;
 import java.util.Arrays;
 
-// SOURCE for Server logic: https://www.baeldung.com/java-unix-domain-socket
-// SOURCE for simple message exchange: CHATGPT
+/**
+ * This is a demo (and proof-of-concept) of the protocol https://eprint.iacr.org/2017/1196.pdf
+ * <p>
+ * N - polynomial size - must be power of 2 and fit into int data type
+ * Q - defines Z_Q for coefficients in the polynomials - must be prime, must be congruent with 1 modulo 2 * N
+ * ETA - defines Central binomial distribution when generating error polynomials.
+ * SOURCE for Server communication logic: https://www.baeldung.com/java-unix-domain-socket
+ * SOURCE for simple message exchange: CHATGPT
+ * </p>
+ */
 public class Main {
 
     private static final int N = 1024;

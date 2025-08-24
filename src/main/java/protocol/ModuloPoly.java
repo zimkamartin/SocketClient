@@ -5,9 +5,9 @@ import java.math.BigInteger;
 /**
  * Represents all modulo polynomials in NTT tree.
  * <p>
- * These polynomials are of the following form: X^powerX P (zeta_indexZeta)^powerZeta,
+ * These polynomials are of the form X^powerX P (zeta_indexZeta)^powerZeta,
  * where P is plus if plus, else it is minus.
- * Attribute powerX do not need to be stored.
+ * Attribute powerX does not need to be stored.
  * For more details see https://electricdusk.com/ntt.html
  * </p>
  */

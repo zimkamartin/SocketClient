@@ -7,7 +7,7 @@ import java.util.*;
  * Represents all math operations with objects of class Polynomial. For efficiency, everything is done in NTT domain.
  * <p>
  * When an instance is constructed, arrays zetas and zetas inverted are computed.
- * Otherwise, provides just utility functions add, inverse, subtracts, multiply.
+ * Otherwise, provides just utility functions add, inverse, subtracts, multiply, create constant two polynomial.
  * NTT stuff heavily inspired by https://electricdusk.com/ntt.html
  * </p>
  */
@@ -53,11 +53,15 @@ class Ntt {
         }
     }
 
+    /**
+     * Generates arrays zetas and zetas inverted by exponentiating parameter zeta.
+     * @param zeta
+     */
     private void generateArrays(BigInteger zeta) {
         BigInteger nRoot = BigInteger.TWO.multiply(BigInteger.valueOf(n));
         for (List<ModuloPoly> layer: nttTree) {
             for (int i = 0; i < layer.size(); i++) {
-                if (i % 2 == 1) {
+                if (i % 2 == 1) {  // There is still + zeta, - zeta. So save it just as one zeta (the plus one).
                     continue;
                 }
                 ModuloPoly poly = layer.get(i);
@@ -74,15 +78,15 @@ class Ntt {
     private Set<BigInteger> findPrimeFactors(BigInteger x) {
         BigInteger i = BigInteger.TWO;
         Set<BigInteger> primeFactors = new HashSet<>();
-        while ((i.multiply(i)).compareTo(x) <= 0) {
-            if (x.mod(i).equals(BigInteger.ZERO)) {
+        while ((i.multiply(i)).compareTo(x) <= 0) {  // Stop in square root.
+            if (x.mod(i).equals(BigInteger.ZERO)) {  // i divides x.
                 x = x.divide(i);
                 primeFactors.add(i);
             } else {
-                i = i.add(BigInteger.ONE);
+                i = i.add(BigInteger.ONE);  // Increment i.
             }
         }
-        if (x.compareTo(BigInteger.ONE) > 0) {
+        if (x.compareTo(BigInteger.ONE) > 0) {  // There remains one prime.
             primeFactors.add(x);
         }
         return primeFactors;
